@@ -10,4 +10,5 @@ No live model is integrated; that is optional. No production authentication, app
 
 AI assistance: Codex generated the implementation, tests, synthetic files, documentation and demonstration. The candidate must review, understand and verify all of it. Do not claim unaided authorship. The assessment explicitly requires an explanation and prediction without AI assistance during follow-up.
 
-Time spent: this generated implementation was prepared in this chat on 2026-10-05. Candidate's own total time has not been supplied and cannot be truthfully invented. Before submitting, replace this paragraph with the actual total time (including review and independent testing) and update unfinished work accurately.
+Time spent: 3 hrs
+
