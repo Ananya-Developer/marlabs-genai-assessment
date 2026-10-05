@@ -1,0 +1,83 @@
+{
+  "openapi": "3.0.3",
+  "info": {"title": "Employee Support Desk", "version": "1.0.0", "description": "Offline policy answers and reimbursement triage. All reimbursement submissions require human review."},
+  "paths": {
+    "/answer": {
+      "post": {
+        "summary": "Ask a policy question",
+        "operationId": "answer",
+        "parameters": [{"$ref": "#/components/parameters/Caller"}],
+        "requestBody": {
+          "required": true,
+          "content": {"application/json": {"schema": {"type": "object", "required": ["question", "as_of"], "properties": {"question": {"type": "string", "minLength": 1}, "as_of": {"type": "string", "format": "date"}}}, "examples": {
+            "certification": {"summary": "Supported certification limit", "value": {"question": "What is my annual certification reimbursement limit?", "as_of": "2026-09-21"}},
+            "conflict": {"summary": "Conflicting home-office allowances", "value": {"question": "What is my home-office allowance?", "as_of": "2026-09-21"}},
+            "insufficient": {"summary": "No wellness policy", "value": {"question": "What is my wellness benefit?", "as_of": "2026-09-21"}}
+          }}}
+        },
+        "responses": {
+          "200": {"description": "Policy business outcome", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Policy"}}}},
+          "400": {"$ref": "#/components/responses/BadRequest"},
+          "401": {"$ref": "#/components/responses/UnknownCaller"},
+          "502": {"$ref": "#/components/responses/DependencyFailure"},
+          "504": {"$ref": "#/components/responses/DependencyFailure"}
+        }
+      }
+    },
+    "/batches": {
+      "post": {
+        "summary": "Upload a reimbursement batch",
+        "description": "Paste metadata JSON and select the matching files. Start with the default one-file manifest and request-01.txt. For the supplied eight-file batch, paste examples/manifest.json and select all eight files from examples/requests. Filenames must match exactly.",
+        "operationId": "batch",
+        "parameters": [{"$ref": "#/components/parameters/Caller"}],
+        "requestBody": {
+          "required": true,
+          "content": {"multipart/form-data": {
+            "schema": {"type": "object", "required": ["metadata", "files"], "properties": {
+              "metadata": {"type": "string", "description": "Manifest as JSON text", "example": "{\"batch_id\":\"swagger-demo\",\"as_of\":\"2026-09-21\",\"documents\":[{\"document_id\":\"request-01\",\"filename\":\"request-01.txt\"}]}"},
+              "files": {"type": "array", "minItems": 1, "maxItems": 8, "items": {"type": "string", "format": "binary"}}
+            }},
+            "encoding": {"metadata": {"contentType": "text/plain"}}
+          }}
+        },
+        "responses": {
+          "200": {"description": "One result per manifest entry, in manifest order; includes failed items and exact duplicates", "content": {"application/json": {"schema": {"type": "object", "properties": {
+            "batch_id": {"type": "string"},
+            "summary": {"type": "object", "properties": {"total": {"type": "integer"}, "completed": {"type": "integer"}, "failed": {"type": "integer"}}},
+            "results": {"type": "array", "items": {"$ref": "#/components/schemas/Result"}}
+          }}}}},
+          "400": {"$ref": "#/components/responses/BadRequest"},
+          "401": {"$ref": "#/components/responses/UnknownCaller"},
+          "413": {"description": "Upload exceeds configured size limits"},
+          "502": {"$ref": "#/components/responses/DependencyFailure"},
+          "504": {"$ref": "#/components/responses/DependencyFailure"}
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {"Caller": {"name": "X-Caller-Id", "in": "header", "required": true, "description": "Synthetic identity; tenant and role are resolved server-side", "schema": {"type": "string", "enum": ["atlas-employee-01", "atlas-contractor-01", "boreal-employee-01"], "default": "atlas-employee-01"}}},
+    "responses": {
+      "BadRequest": {"description": "Invalid body, date, metadata or file manifest", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+      "UnknownCaller": {"description": "Missing or unknown caller", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+      "DependencyFailure": {"description": "Technical dependency or generation failure", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}}
+    },
+    "schemas": {
+      "ErrorDetail": {"type": "object", "required": ["code", "message"], "properties": {"code": {"type": "string"}, "message": {"type": "string"}}},
+      "Error": {"type": "object", "properties": {"error": {"$ref": "#/components/schemas/ErrorDetail"}}},
+      "Policy": {"type": "object", "required": ["status", "answer", "citations"], "properties": {
+        "status": {"type": "string", "enum": ["ANSWERED", "CONFLICT", "INSUFFICIENT_EVIDENCE"]},
+        "answer": {"type": "string", "nullable": true},
+        "citations": {"type": "array", "items": {"type": "object", "properties": {"chunk_id": {"type": "string"}, "quote": {"type": "string"}}}}
+      }},
+      "Result": {"type": "object", "properties": {
+        "document_id": {"type": "string"}, "processing_status": {"type": "string", "enum": ["COMPLETED", "FAILED"]},
+        "extracted": {"type": "object", "properties": {"benefit": {"type": "string", "nullable": true}, "amount": {"type": "string", "nullable": true}, "currency": {"type": "string", "nullable": true}, "reference": {"type": "string", "nullable": true}}},
+        "field_evidence": {"type": "object", "additionalProperties": {"type": "array", "items": {"type": "string"}}},
+        "policy": {"nullable": true, "allOf": [{"$ref": "#/components/schemas/Policy"}]},
+        "review_required": {"type": "boolean", "enum": [true]}, "issues": {"type": "array", "items": {"type": "string"}},
+        "duplicate_of": {"type": "string", "nullable": true}, "error": {"nullable": true, "allOf": [{"$ref": "#/components/schemas/ErrorDetail"}]}
+      }}
+    }
+  }
+}

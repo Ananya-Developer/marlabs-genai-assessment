@@ -43,6 +43,16 @@ Python tests cover access filtering, both date boundaries, verbatim evidence, co
 
 ## Public requests
 
+### Swagger UI
+
+After building and restarting Spring, open `http://127.0.0.1:8080/swagger-ui/index.html` (use port 18080 if configured). Python must also be running to execute requests. Swagger's browser assets are bundled by springdoc; no CDN or API key is used. The UI loads the explicit API contract at `/openapi.json`, with caller choices, policy question examples, and multipart upload controls.
+
+For `/answer`, click **Try it out**, choose `atlas-employee-01`, select an example, and click **Execute**. Certification returns ANSWERED with INR 25000; home-office returns CONFLICT; wellness returns INSUFFICIENT_EVIDENCE.
+
+For `/batches`, click **Try it out**, keep the default one-file metadata JSON, choose `examples/requests/request-01.txt` in the files control, and click **Execute**. To run the supplied mixed batch, paste `examples/manifest.json` into metadata and add/select all eight matching files. Keep uploaded filenames unchanged. Expect total 8, completed 7, failed 1. Metadata is sent as JSON text in a text/plain part, which the public endpoint accepts alongside the documented application/json metadata part.
+
+Swagger support uses springdoc 2.6.0, compatible with this project's Spring Boot 3.3.x. Rebuild after installing this addition, and commit/push the changed files before obtaining the final submission SHA.
+
 Use `curl.exe` on Windows (avoids PowerShell's historical curl alias); `curl` on Linux/macOS.
 
 ```sh

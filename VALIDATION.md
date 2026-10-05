@@ -1,5 +1,7 @@
 # Verification performed on 2026-10-05
 
+Swagger addition: the three Spring API tests passed again. A separate local Spring instance served `/swagger-ui/index.html` and `/openapi.json` successfully; `/v3/api-docs/swagger-config` correctly selected the supplied contract. The Swagger contract includes request examples, the caller header and multipart file inputs. Restart/rebuild your running JAR to use the addition.
+
 - Python: 7 test methods passed, including multiple subcases and an actual internal HTTP server exercising model timeout, unavailable provider and malformed output.
 - Spring: 3 test methods passed, with zero failures/errors/skips. Tests exercise synthetic caller lookup, forged body identity, dates and question validation, multipart manifests/file matching, unavailable dependency, malformed JSON, propagated model errors and read timeout.
 - Live public API: `examples/demo.py` passed against both running services. Saved representative public JSON responses are in `examples/responses/`; they are actual HTTP outputs, not manually constructed examples. The supplied batch returned total 8, completed 7, failed 1. Every result requires human review.
